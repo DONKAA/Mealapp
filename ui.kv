@@ -1,0 +1,277 @@
+#:kivy 2.3.0
+#:import MDFillRoundFlatIconButton kivymd.uix.button.MDFillRoundFlatIconButton
+#:import MDToolbar kivymd.uix.toolbar.MDToolbar
+#:import MDBoxLayout kivymd.uix.boxlayout.MDBoxLayout
+#:import MDLabel kivymd.uix.label.MDLabel
+#:import MDTextField kivymd.uix.textfield.MDTextField
+#:import MDTextFieldRect kivymd.uix.textfield.MDTextFieldRect
+#:import MDCard kivymd.uix.card.MDCard
+#:import MDList kivymd.uix.list.MDList
+#:import OneLineListItem kivymd.uix.list.OneLineListItem
+#:import MDSnackbar kivymd.uix.snackbar.MDSnackbar
+#:import MDRectangleFlatIconButton kivymd.uix.button.MDRectangleFlatIconButton
+#:import MDBottomNavigation kivymd.uix.bottomnavigation.MDBottomNavigation
+#:import MDBottomNavigationItem kivymd.uix.bottomnavigation.MDBottomNavigationItem
+#:import MDScrollView kivymd.uix.scrollview.MDScrollView
+
+<ThinLabel@MDLabel>:
+    font_style: "Body2"
+    halign: "left"
+    size_hint_y: None
+    height: self.texture_size[1] + dp(6)
+
+<NumField@MDTextField>:
+    mode: "outlined"
+    input_filter: "float"
+    size_hint_y: None
+    height: dp(48)
+
+<Card@MDCard>:
+    radius: dp(16)
+    padding: dp(12)
+    spacing: dp(8)
+
+MDBoxLayout:
+    orientation: "vertical"
+
+    MDToolbar:
+        title: "Meal App"
+        elevation: 2
+        left_action_items: [["menu", lambda x: None]]
+        right_action_items: [["theme-light-dark", lambda x: app.theme_cls.toggle_theme_style()],
+                             ["palette", lambda x: None]]
+
+    MDBottomNavigation:
+        id: tabs
+        text_color_active: app.theme_cls.primary_color
+
+        MDBottomNavigationItem:
+            name: "recipes"
+            text: "Ricette"
+            icon: "book-open-page-variant"
+
+            MDScrollView:
+                MDBoxLayout:
+                    orientation: "vertical"
+                    padding: dp(10)
+                    spacing: dp(10)
+                    adaptive_height: True
+
+                    Card:
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            spacing: dp(8)
+                            ThinLabel:
+                                text: "📚 Ricette – crea o modifica"
+                            MDTextField:
+                                id: rcp_title
+                                hint_text: "Titolo ricetta"
+                                mode: "outlined"
+                            MDTextField:
+                                id: rcp_slot
+                                hint_text: "Slot (es. Colazione, Pranzo...)"
+                                mode: "outlined"
+                                text: app.meal_slots[0]
+                            MDTextFieldRect:
+                                id: rcp_ing
+                                hint_text: "Ingredienti (uno per riga)"
+                                size_hint_y: None
+                                height: dp(120)
+                            MDTextFieldRect:
+                                id: rcp_steps
+                                hint_text: "Procedimento (passi)"
+                                size_hint_y: None
+                                height: dp(120)
+                            MDBoxLayout:
+                                spacing: dp(8)
+                                NumField:
+                                    id: rcp_kcal
+                                    hint_text: "Kcal"
+                                NumField:
+                                    id: rcp_p
+                                    hint_text: "P (g)"
+                                NumField:
+                                    id: rcp_c
+                                    hint_text: "C (g)"
+                                NumField:
+                                    id: rcp_f
+                                    hint_text: "F (g)"
+                            MDTextField:
+                                id: rcp_link
+                                hint_text: "Link (opzionale)"
+                                mode: "outlined"
+
+                            MDBoxLayout:
+                                spacing: dp(8)
+                                size_hint_y: None
+                                height: dp(44)
+                                MDFillRoundFlatIconButton:
+                                    text: "Salva / aggiorna"
+                                    icon: "content-save"
+                                    on_release: app.save_recipe()
+                                MDRectangleFlatIconButton:
+                                    text: "Elimina"
+                                    icon: "delete"
+                                    on_release: app.delete_selected_recipe()
+
+                    Card:
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            ThinLabel:
+                                text: "Tocca una ricetta per caricarla nel form:"
+                            ScrollView:
+                                do_scroll_x: False
+                                do_scroll_y: True
+                                MDList:
+                                    id: recipes_rv
+
+            MDSnackbar:
+                id: snackbar
+                text: "Operazione completata"
+                snackbar_x: "10dp"
+                snackbar_y: "10dp"
+                size_hint_x: .9
+                MDLabel:
+                    id: snackbar_text
+                    text: "ok"
+
+        MDBottomNavigationItem:
+            name: "planner"
+            text: "Planner"
+            icon: "calendar-month"
+
+            MDScrollView:
+                MDBoxLayout:
+                    orientation: "vertical"
+                    padding: dp(10)
+                    spacing: dp(10)
+                    adaptive_height: True
+
+                    Card:
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            spacing: dp(8)
+                            MDBoxLayout:
+                                spacing: dp(8)
+                                MDTextField:
+                                    id: pl_week
+                                    text: "Settimana 1"
+                                    mode: "outlined"
+                                MDTextField:
+                                    id: pl_day
+                                    text: "Giorno 1"
+                                    mode: "outlined"
+
+                            # 6 pasti
+                            MDBoxLayout:
+                                spacing: dp(10)
+                                adaptive_height: True
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Colazione"
+                                    MDTextField: id: sp_col; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_col; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Colazione', sp_col.text, por_col.text)
+
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Spuntino"
+                                    MDTextField: id: sp_sp1; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_sp1; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Spuntino', sp_sp1.text, por_sp1.text)
+
+                            MDBoxLayout:
+                                spacing: dp(10)
+                                adaptive_height: True
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Pranzo"
+                                    MDTextField: id: sp_lun; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_lun; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Pranzo', sp_lun.text, por_lun.text)
+
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Pre-Workout"
+                                    MDTextField: id: sp_pre; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_pre; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Pre-Workout', sp_pre.text, por_pre.text)
+
+                            MDBoxLayout:
+                                spacing: dp(10)
+                                adaptive_height: True
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Cena"
+                                    MDTextField: id: sp_din; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_din; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Cena', sp_din.text, por_din.text)
+
+                                MDBoxLayout:
+                                    orientation: "vertical"
+                                    ThinLabel: text: "Spuntino serale"
+                                    MDTextField: id: sp_sp2; hint_text: "Seleziona ricetta"; mode: "outlined"; text: "Seleziona ricetta"
+                                    NumField: id: por_sp2; hint_text: "Porzioni"; text: "1.0"
+                                    MDFillRoundFlatIconButton: text: "Salva"; icon:"content-save"; on_release: app.save_plan('Spuntino serale', sp_sp2.text, por_sp2.text)
+
+                    Card:
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            ThinLabel: text: "Riepilogo settimana"
+                            MDScrollView:
+                                MDList:
+                                    id: plan_rv
+
+        MDBottomNavigationItem:
+            name: "shopping"
+            text: "Spesa"
+            icon: "cart"
+
+            MDBoxLayout:
+                orientation: "vertical"
+                padding: dp(10)
+                spacing: dp(10)
+
+                Card:
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(8)
+                        MDTextField:
+                            id: shop_week
+                            text: "Settimana 1"
+                            mode: "outlined"
+                        MDFillRoundFlatIconButton:
+                            text: "Calcola lista spesa"
+                            icon: "cart"
+                            on_release: app.calc_shopping()
+
+                Card:
+                    MDScrollView:
+                        MDList:
+                            id: shop_rv
+
+        MDBottomNavigationItem:
+            name: "export"
+            text: "Export"
+            icon: "file-export"
+
+            MDBoxLayout:
+                orientation: "vertical"
+                padding: dp(10)
+                spacing: dp(10)
+
+                Card:
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(8)
+                        MDTextField:
+                            id: exp_week
+                            text: "Settimana 1"
+                            mode: "outlined"
+                        MDFillRoundFlatIconButton:
+                            text: "🖨️ Genera PDF Meal-Prep"
+                            icon: "printer"
+                            on_release: app.do_export_pdf()
+                        ThinLabel:
+                            id: exp_status
+                            text: ""
