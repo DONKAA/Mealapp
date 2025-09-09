@@ -1,0 +1,48 @@
+name: Build Kivy APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    - name: Install system packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential git zip unzip python3-pip \
+          libffi-dev libssl-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev
+
+    - name: Upgrade pip
+      run: python3 -m pip install --upgrade pip
+
+    - name: Install buildozer and deps
+      run: |
+        pip install "cython<3" buildozer pillow
+
+    - name: Build APK (debug)
+      env:
+        ANDROIDAPI: "33"
+        NDKAPI: "21"
+      run: |
+        buildozer -v android debug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mealapp-apk
+        path: bin/*.apk
