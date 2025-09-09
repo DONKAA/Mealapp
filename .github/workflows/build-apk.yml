@@ -19,20 +19,29 @@ jobs:
         distribution: temurin
         java-version: "17"
 
-    - name: Install Android SDK manually
+    # --- Android SDK + build-tools (cmdline-tools moderni) ---
+    - name: Install Android SDK cmdline-tools
+      env:
+        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       run: |
-        ANDROID_SDK_ROOT=$HOME/android-sdk
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-        curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o cmdline-tools.zip
-        unzip -q cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-        mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+        set -e
+        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+        cd "$ANDROID_SDK_ROOT/cmdline-tools"
+        # Scarica i command line tools ufficiali
+        curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o clt.zip
+        unzip -q clt.zip -d latest
+        rm -f clt.zip
+        # Accetta licenze e installa pacchetti necessari
+        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
           "platform-tools" \
           "platforms;android-33" \
           "build-tools;33.0.2"
         echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+        echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
+    # --- dipendenze native utili a Kivy/ReportLab ---
     - name: Install system packages
       run: |
         sudo apt-get update
@@ -44,10 +53,11 @@ jobs:
     - name: Upgrade pip
       run: python3 -m pip install --upgrade pip
 
-    - name: Install buildozer and deps
+    - name: Install buildozer and python deps
       run: |
         pip install "cython<3" buildozer pillow
 
+    # --- Build APK ---
     - name: Build APK (debug)
       env:
         ANDROIDAPI: "33"
@@ -56,6 +66,7 @@ jobs:
       run: |
         buildozer -v android debug
 
+    # --- Artifact APK ---
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
