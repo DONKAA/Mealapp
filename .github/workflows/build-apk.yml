@@ -72,3 +72,4 @@ jobs:
       with:
         name: mealapp-apk
         path: bin/*.apk
+
