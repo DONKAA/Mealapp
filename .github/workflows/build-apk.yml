@@ -19,6 +19,16 @@ jobs:
         distribution: temurin
         java-version: "17"
 
+    # ✅ Installa Android SDK + accetta le licenze + build-tools richiesti
+    - name: Install Android SDK + build-tools
+      uses: android-actions/setup-android@v3
+      with:
+        packages: |
+          cmdline-tools;latest
+          platform-tools
+          platforms;android-33
+          build-tools;33.0.2
+
     - name: Install system packages
       run: |
         sudo apt-get update
@@ -36,8 +46,9 @@ jobs:
 
     - name: Build APK (debug)
       env:
-        ANDROIDAPI: "33"
+        ANDROIDAPI: "33"      # target API
         NDKAPI: "21"
+        ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
       run: |
         buildozer -v android debug
 
