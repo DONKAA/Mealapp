@@ -19,15 +19,19 @@ jobs:
         distribution: temurin
         java-version: "17"
 
-    # ✅ Installa Android SDK + accetta le licenze + build-tools richiesti
-    - name: Install Android SDK + build-tools
-      uses: android-actions/setup-android@v3
-      with:
-        packages: |
-          cmdline-tools;latest
-          platform-tools
-          platforms;android-33
-          build-tools;33.0.2
+    - name: Install Android SDK manually
+      run: |
+        ANDROID_SDK_ROOT=$HOME/android-sdk
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o cmdline-tools.zip
+        unzip -q cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+        mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2"
+        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
     - name: Install system packages
       run: |
@@ -46,7 +50,7 @@ jobs:
 
     - name: Build APK (debug)
       env:
-        ANDROIDAPI: "33"      # target API
+        ANDROIDAPI: "33"
         NDKAPI: "21"
         ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
       run: |
