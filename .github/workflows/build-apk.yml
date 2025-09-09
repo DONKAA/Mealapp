@@ -19,29 +19,25 @@ jobs:
         distribution: temurin
         java-version: "17"
 
-    # --- Android SDK + build-tools (cmdline-tools moderni) ---
+    # --- Android SDK + cmdline-tools ---
     - name: Install Android SDK cmdline-tools
       env:
         ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       run: |
-        set -e
         mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
         cd "$ANDROID_SDK_ROOT/cmdline-tools"
-        # Scarica i command line tools ufficiali
-        curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o clt.zip
-        unzip -q clt.zip -d latest
-        rm -f clt.zip
-        # Accetta licenze e installa pacchetti necessari
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
+        unzip -q tools.zip
+        # lo zip crea "cmdline-tools": rinominiamo in "latest" per il path atteso
+        mv cmdline-tools latest
+        # accetta licenze e installa componenti necessari
         yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
         yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
-          "platform-tools" \
-          "platforms;android-33" \
-          "build-tools;33.0.2"
+          "platform-tools" "platforms;android-33" "build-tools;33.0.2"
         echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-        echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
-    # --- dipendenze native utili a Kivy/ReportLab ---
+    # --- Dipendenze di sistema utili a Kivy/ReportLab ---
     - name: Install system packages
       run: |
         sudo apt-get update
@@ -72,4 +68,3 @@ jobs:
       with:
         name: mealapp-apk
         path: bin/*.apk
-
