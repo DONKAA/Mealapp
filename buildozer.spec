@@ -1,61 +1,67 @@
 [app]
-
-# Nome dell'app come appare sul telefono
+# --- Info app ---
 title = Meal App
-# Nome del pacchetto (identificativo univoco)
 package.name = mealapp
 package.domain = org.donkaa
-
-# Versione
 version = 0.1
 
-# Sorgente (tutti i file .py, .kv, ecc. nella root del repo)
+# --- Sorgenti ---
 source.dir = .
 source.include_exts = py,kv,txt,db,ttf
 
-# Orientamento: portrait / landscape / all
+# --- UI ---
 orientation = portrait
-
-# Modalità fullscreen (0 = no, 1 = sì)
 fullscreen = 0
 
-# Linguaggio
+# --- Python on host/mac (ignorato su GH Actions, ok così) ---
 osx.python_version = 3
 
-# -----------------------------------------------------
+# =================================================================
 # ANDROID
-# -----------------------------------------------------
-
-# SDK path: puntiamo alla cartella che installiamo nel workflow GitHub
+# =================================================================
+# Usa l’SDK installato dal workflow in /home/runner/android-sdk
 android.sdk_path = /home/runner/android-sdk
 
-# Target API (Android 13)
+# Target / min API
 android.api = 33
-# Minima API supportata
 android.minapi = 24
+
+# Build-tools stabili (evita 36.x rc che non esistono)
+android.build_tools = 33.0.2
 
 # Architetture supportate
 android.archs = arm64-v8a, armeabi-v7a
 
-# Build tools: mettiamo una versione stabile disponibile
-android.build_tools = 33.0.2
-
-# Permessi (esempio: per scrivere file PDF)
+# Permessi (per salvare/leggere PDF nella sandbox, compat)
 android.permissions = WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
 
-# -----------------------------------------------------
-# REQUISITI
-# -----------------------------------------------------
-# Librerie Python da includere
-requirements = python3,kivy,kivymd,sqlite3,reportlab,setuptools,cython
-
-# -----------------------------------------------------
-# EXTRA
-# -----------------------------------------------------
-# Usa AndroidX (consigliato su Android moderni)
+# AndroidX abilitato
 android.enable_androidx = True
 
-# (opzionale) logcat filter per debug
+# Log utili in debug
 android.logcat_filters = *:S python:D
 
+# =================================================================
+# DIPENDENZE PYTHON
+# =================================================================
+# Kivy + KivyMD + SQLite + ReportLab (Pillow utile a ReportLab)
+requirements = python3,kivy,kivymd,sqlite3,reportlab,pillow,setuptools,cython
 
+# (Opzionale) se vuoi limitare i moduli di kivy per alleggerire:
+# android.include_exts = py,kv,txt,db,ttf
+# android.requirements = ...
+
+# =================================================================
+# FIRMA (lascia vuoto per debug)
+# =================================================================
+# android.keystore = %(source.dir)s/keystore.jks
+# android.keyalias = mealapp
+# android.keystore_password = 
+# android.keyalias_password = 
+
+# =================================================================
+# VARI (lascia default se non sai cosa sono)
+# =================================================================
+# p4a.branch = master
+# android.ndk = 25b
+# android.accept_sdk_license = True
