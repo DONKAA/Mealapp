@@ -22,23 +22,22 @@ jobs:
         run: |
           mkdir -p $HOME/android-sdk/cmdline-tools
           cd $HOME/android-sdk/cmdline-tools
-          curl -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          curl -sSLo tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q tools.zip -d .
-          rm tools.zip
+          rm -f tools.zip
           mv cmdline-tools latest
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools"           >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/33.0.2"       >> $GITHUB_PATH
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
           $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      # --- Assicura git installato (Buildozer lo richiede) ---
+      # --- Git richiesto da Buildozer/p4a ---
       - name: Ensure git present
         run: |
           sudo apt-get update
           sudo apt-get install -y git
-          which git
           git --version
 
       # --- Dipendenze di sistema utili a Kivy/ReportLab ---
@@ -53,20 +52,30 @@ jobs:
       - name: Upgrade pip
         run: /usr/bin/python3 -m pip install --upgrade pip
 
+      # 🔧 Installa Cython in --user e verifica che il binario "cython" sia nel PATH
+      - name: Install Cython and verify
+        run: |
+          /usr/bin/python3 -m pip install --user "Cython==0.29.36"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          which cython || true
+          cython --version
+
+      # Buildozer + deps Python (in --user, così i binari finiscono in ~/.local/bin)
       - name: Install buildozer and python deps
         run: |
-          /usr/bin/python3 -m pip install buildozer cython pillow kivy kivymd reportlab
+          /usr/bin/python3 -m pip install --user buildozer pillow kivy kivymd reportlab
 
-      # --- Build APK (metto /usr/bin e /usr/local/bin in testa per trovare git) ---
+      # --- Build APK (debug) ---
       - name: Build APK (debug)
         env:
           ANDROIDAPI: "33"
           NDKAPI: "21"
           ANDROID_SDK_ROOT: $HOME/android-sdk
-          PATH: /usr/bin:/usr/local/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/build-tools/33.0.2:$HOME/.local/bin:$PATH
+          PATH: /usr/bin:/usr/local/bin:$HOME/.local/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/build-tools/33.0.2:$PATH
         run: |
           /usr/bin/python3 -m buildozer -v android debug
 
+      # --- Artifact APK ---
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
