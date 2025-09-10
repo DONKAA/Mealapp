@@ -1,63 +1,60 @@
 name: Build Kivy APK
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Set up Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: "17"
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
 
-    - name: Install Android SDK cmdline-tools
-      run: |
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
-        unzip tools.zip
-        mv cmdline-tools latest
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
-          "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-      env:
-        ANDROID_SDK_ROOT: $HOME/android-sdk
+      - name: Install Android SDK cmdline-tools
+        run: |
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd $ANDROID_SDK_ROOT/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
+          unzip tools.zip
+          mv cmdline-tools latest
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-    - name: Install system packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential git zip unzip \
-          libffi-dev libssl-dev libgl1-mesa-dev libgles2-mesa-dev \
-          libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev python3-pip
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-setuptools git zip unzip openjdk-17-jdk libffi-dev libssl-dev liblzma-dev
 
-    - name: Upgrade pip
-      run: python -m pip install --upgrade pip
+      - name: Upgrade pip
+        run: |
+          python3 -m pip install --upgrade pip
 
-    - name: Install buildozer and python deps
-      run: |
-        pip install "cython<3" buildozer pillow
+      - name: Install buildozer and python deps
+        run: |
+          python3 -m pip install buildozer cython virtualenv pillow kivy[base] kivymd reportlab
 
-    - name: Build APK (debug)
-      env:
-        ANDROIDAPI: "33"
-        NDKAPI: "21"
-        ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-        PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$HOME/.local/bin:$PATH
-      run: |
-        python -m buildozer -v android debug
+      - name: Build APK (debug)
+        env:
+          ANDROIDAPI: "33"
+          NDKAPI: "21"
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$HOME/.local/bin:$PATH
+        run: |
+          python3 -m buildozer -v android debug
 
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: mealapp-apk
-        path: bin/*.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mealapp-apk
+          path: bin/*.apk
