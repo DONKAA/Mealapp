@@ -21,15 +21,16 @@ jobs:
         run: |
           mkdir -p $HOME/android-sdk/cmdline-tools
           cd $HOME/android-sdk/cmdline-tools
-          curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip commandlinetools.zip -d latest
-          rm commandlinetools.zip
+          curl -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q tools.zip -d .
+          rm tools.zip
+          mv cmdline-tools latest   # rinomina la cartella
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
           echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Install system packages
         run: |
@@ -37,8 +38,7 @@ jobs:
           sudo apt-get install -y \
             python3-pip python3-setuptools python3-wheel \
             git zip unzip openjdk-17-jdk \
-            libffi-dev libssl-dev \
-            liblzma-dev libjpeg-dev libfreetype6-dev
+            libffi-dev libssl-dev liblzma-dev zlib1g-dev libjpeg-dev libfreetype6-dev
 
       - name: Upgrade pip
         run: |
@@ -46,15 +46,14 @@ jobs:
 
       - name: Install buildozer and python deps
         run: |
-          python3 -m pip install --user buildozer cython virtualenv \
-            kivy kivymd reportlab pillow
+          python3 -m pip install --user buildozer cython virtualenv kivy kivymd reportlab pillow
 
       - name: Build APK (debug)
         env:
           ANDROIDAPI: "33"
           NDKAPI: "21"
           ANDROID_SDK_ROOT: $HOME/android-sdk
-          PATH: $ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/33.0.2:$HOME/.local/bin:$PATH
+          PATH: $HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/build-tools/33.0.2:$HOME/.local/bin:$PATH
         run: |
           /usr/bin/python3 -m buildozer -v android debug
 
