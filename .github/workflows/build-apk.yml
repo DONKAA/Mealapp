@@ -11,7 +11,7 @@ jobs:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -34,27 +34,27 @@ jobs:
       - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3-setuptools git zip unzip openjdk-17-jdk libffi-dev libssl-dev liblzma-dev
+          sudo apt-get install -y python3-pip python3-setuptools git zip unzip openjdk-17-jdk \
+            libffi-dev libssl-dev autoconf automake build-essential libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5
 
       - name: Upgrade pip
-        run: |
-          python3 -m pip install --upgrade pip
+        run: python3 -m pip install --upgrade pip
 
       - name: Install buildozer and python deps
         run: |
-          python3 -m pip install buildozer cython virtualenv pillow kivy[base] kivymd reportlab
+          python3 -m pip install --user buildozer cython virtualenv pillow kivy kivymd reportlab
 
       - name: Build APK (debug)
         env:
           ANDROIDAPI: "33"
           NDKAPI: "21"
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$HOME/.local/bin:$PATH
+          PATH: $ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/build-tools/33.0.2:$HOME/.local/bin:$PATH
         run: |
           python3 -m buildozer -v android debug
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mealapp-apk
           path: bin/*.apk
