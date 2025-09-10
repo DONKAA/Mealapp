@@ -19,26 +19,19 @@ jobs:
         distribution: temurin
         java-version: "17"
 
-    # --- Android SDK + cmdline-tools ---
     - name: Install Android SDK cmdline-tools
-      env:
-        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       run: |
-        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-        cd "$ANDROID_SDK_ROOT/cmdline-tools"
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
-        unzip -q tools.zip
-        # lo zip crea "cmdline-tools": rinominiamo in "latest"
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        cd $HOME/android-sdk/cmdline-tools
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
+        unzip tools.zip
         mv cmdline-tools latest
-        # licenze + componenti necessari
-        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
-        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
           "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-        # esporta variabili per gli step successivi
-        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-        echo "$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+      env:
+        ANDROID_SDK_ROOT: $HOME/android-sdk
 
-    # --- Dipendenze di sistema utili a Kivy/ReportLab ---
     - name: Install system packages
       run: |
         sudo apt-get update
@@ -52,19 +45,17 @@ jobs:
 
     - name: Install buildozer and python deps
       run: |
-        pip install "cython<3" buildozer pillow
+        pip install "cython<3" buildozer pillow kivy kivymd reportlab
 
-    # --- Build APK (PATH punta anche ai build-tools 33.0.2 per AIDL) ---
     - name: Build APK (debug)
       env:
         ANDROIDAPI: "33"
         NDKAPI: "21"
         ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-        PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$PATH
+        PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$HOME/.local/bin:$PATH
       run: |
-        buildozer -v android debug
+        python3 -m buildozer -v android debug
 
-    # --- Artifact APK ---
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
