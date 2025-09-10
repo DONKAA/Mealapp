@@ -1,67 +1,83 @@
-[app]
-# --- Info app ---
-title = Meal App
-package.name = mealapp
-package.domain = org.donkaa
-version = 0.1
+name: Build Kivy APK
 
-# --- Sorgenti ---
-source.dir = .
-source.include_exts = py,kv,txt,db,ttf
+on:
+  workflow_dispatch:
 
-# --- UI ---
-orientation = portrait
-fullscreen = 0
+jobs:
+  build:
+    runs-on: ubuntu-22.04
 
-# --- Python on host/mac (ignorato su GH Actions, ok così) ---
-osx.python_version = 3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-# =================================================================
-# ANDROID
-# =================================================================
-# Usa l’SDK installato dal workflow in /home/runner/android-sdk
-android.sdk_path = /home/runner/android-sdk
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-# Target / min API
-android.api = 33
-android.minapi = 24
+      # --- Android SDK + cmdline-tools ---
+      - name: Install Android SDK cmdline-tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -sSLo tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q tools.zip -d .
+          rm -f tools.zip
+          mv cmdline-tools latest
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools"           >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/33.0.2"       >> $GITHUB_PATH
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-# Build-tools stabili (evita 36.x rc che non esistono)
-android.build_tools = 33.0.2
+      # --- Git richiesto da Buildozer/p4a ---
+      - name: Ensure git present
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git
+          git --version
 
-# Architetture supportate
-android.archs = arm64-v8a, armeabi-v7a
+      # --- Dipendenze di sistema utili a Kivy/ReportLab ---
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-pip python3-setuptools python3-wheel \
+            zip unzip libffi-dev libssl-dev libjpeg-dev libfreetype6-dev \
+            libgl1-mesa-dev libgles2-mesa-dev libsqlite3-dev zlib1g-dev
 
-# Permessi (per salvare/leggere PDF nella sandbox, compat)
-android.permissions = WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+      - name: Upgrade pip
+        run: /usr/bin/python3 -m pip install --upgrade pip
 
-# AndroidX abilitato
-android.enable_androidx = True
+      # 🔧 Installa Cython in --user e verifica che il binario "cython" sia nel PATH
+      - name: Install Cython and verify
+        run: |
+          /usr/bin/python3 -m pip install --user "Cython==0.29.36"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          which cython || true
+          cython --version
 
-# Log utili in debug
-android.logcat_filters = *:S python:D
+      # Buildozer + deps Python (in --user, così i binari finiscono in ~/.local/bin)
+      - name: Install buildozer and python deps
+        run: |
+          /usr/bin/python3 -m pip install --user buildozer pillow kivy kivymd reportlab
 
-# =================================================================
-# DIPENDENZE PYTHON
-# =================================================================
-# Kivy + KivyMD + SQLite + ReportLab (Pillow utile a ReportLab)
-requirements = python3,kivy,kivymd,sqlite3,reportlab,pillow,setuptools,cython
+      # --- Build APK (debug) ---
+      - name: Build APK (debug)
+        env:
+          ANDROIDAPI: "33"
+          NDKAPI: "21"
+          ANDROID_SDK_ROOT: $HOME/android-sdk
+          PATH: /usr/bin:/usr/local/bin:$HOME/.local/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/build-tools/33.0.2:$PATH
+        run: |
+          /usr/bin/python3 -m buildozer -v android debug
 
-# (Opzionale) se vuoi limitare i moduli di kivy per alleggerire:
-# android.include_exts = py,kv,txt,db,ttf
-# android.requirements = ...
-
-# =================================================================
-# FIRMA (lascia vuoto per debug)
-# =================================================================
-# android.keystore = %(source.dir)s/keystore.jks
-# android.keyalias = mealapp
-# android.keystore_password = 
-# android.keyalias_password = 
-
-# =================================================================
-# VARI (lascia default se non sai cosa sono)
-# =================================================================
-# p4a.branch = master
-# android.ndk = 25b
-# android.accept_sdk_license = True
+      # --- Artifact APK ---
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealapp-apk
+          path: bin/*.apk
