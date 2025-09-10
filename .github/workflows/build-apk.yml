@@ -36,16 +36,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-          build-essential git zip unzip python3-pip \
+          build-essential git zip unzip \
           libffi-dev libssl-dev libgl1-mesa-dev libgles2-mesa-dev \
-          libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev
+          libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev python3-pip
 
     - name: Upgrade pip
-      run: python3 -m pip install --upgrade pip
+      run: python -m pip install --upgrade pip
 
     - name: Install buildozer and python deps
       run: |
-        pip install "cython<3" buildozer pillow kivy kivymd reportlab
+        pip install "cython<3" buildozer pillow
 
     - name: Build APK (debug)
       env:
@@ -54,7 +54,7 @@ jobs:
         ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
         PATH: ${{ env.ANDROID_SDK_ROOT }}/platform-tools:${{ env.ANDROID_SDK_ROOT }}/cmdline-tools/latest/bin:${{ env.ANDROID_SDK_ROOT }}/build-tools/33.0.2:$HOME/.local/bin:$PATH
       run: |
-        python3 -m buildozer -v android debug
+        python -m buildozer -v android debug
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
